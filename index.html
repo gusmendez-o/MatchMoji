@@ -92,13 +92,13 @@
                     Instrucciones
                 </button>
                 
-                <!-- Contenedor para ambos contadores (Movimientos y Parejas) -->
+                <!-- Contenedor para Movimientos y Parejas (Reajustado para dos elementos) -->
                 <div class="flex flex-grow justify-center space-x-3 w-full sm:w-auto">
                     <!-- Contador de Movimientos -->
                     <div class="text-lg font-semibold text-gray-700 bg-yellow-100 p-2 rounded-lg shadow-sm text-center flex-1">
                         Mov.: <span id="moves-counter" class="text-orange-600">0</span>
                     </div>
-                    <!-- Contador de Parejas (Puntaje) - NUEVO -->
+                    <!-- Contador de Parejas (Puntaje) -->
                     <div class="text-lg font-semibold text-gray-700 bg-green-100 p-2 rounded-lg shadow-sm text-center flex-1">
                         Par.: <span id="score-counter" class="text-green-600">0</span>
                     </div>
@@ -138,10 +138,16 @@
                         <li><strong class="text-green-600">Si Hacen Pareja:</strong> Si los dos emojis son iguales, las cartas se quedan boca arriba (marcado en verde). ¡Tu puntaje de parejas sube!</li>
                         <li><strong class="text-red-500">Si NO Hacen Pareja:</strong> Si los emojis son diferentes, las cartas se voltearán de nuevo automáticamente después de un momento.</li>
                         <li><strong class="text-yellow-600">Contador:</strong> El contador de Movimientos aumenta al voltear la segunda carta.</li>
-                        <li><strong class="text-purple-600">Victoria:</strong> Ganas el juego cuando todas las cartas estén emparejadas. ¡Apunta a tu récord personal!</li>
+                        <li><strong class="text-purple-600">Victoria:</strong> Ganas el juego cuando todas las cartas estén emparejadas.</li>
                     </ul>
                 </div>
-                <button id="close-rules-button" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition duration-150">
+                
+                <!-- CRÉDITO DEL DESARROLLADOR: Centrado y con color que resalta -->
+                <p class="text-center text-sm mt-4 font-semibold text-orange-600">
+                    Desarrollado por Gustavo Mendez
+                </p>
+
+                <button id="close-rules-button" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition duration-150">
                     ¡Entendido!
                 </button>
             </div>
@@ -165,15 +171,6 @@
     </div>
 
     <script>
-        // Definición de las variables globales necesarias
-        // Nota: Los imports de Firebase se incluirían aquí si el usuario decide implementar la persistencia de datos (Récords).
-        let db;
-        let auth;
-        let userId;
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
         // --- Variables del Juego ---
         const emojis = ['🌟', '🍕', '🚀', '💡', '🌍', '🦋', '🤖', '🌈'];
         let gameCards = [];
@@ -216,7 +213,7 @@
             
             // Reiniciar contadores en la interfaz
             movesCounter.textContent = moves;
-            scoreCounter.textContent = matchedPairs; // Resetear el nuevo contador de puntaje
+            scoreCounter.textContent = matchedPairs;
             
             winMessage.classList.add('hidden');
             rulesModal.classList.add('hidden'); 
