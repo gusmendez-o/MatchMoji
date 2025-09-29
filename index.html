@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchMoji</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración para usar la fuente Inter -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Azul claro de fondo */
+        }
+        /* Estilos personalizados para la carta */
+        .card {
+            aspect-ratio: 1 / 1; /* Mantiene la forma cuadrada */
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d;
+        }
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem; /* Emojis grandes para niños */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-back {
+            background-color: #3b82f6; /* Azul vibrante */
+            border: 4px solid #1d4ed8;
+            color: white;
+            font-size: 1.5rem;
+            transform: rotateY(0deg);
+        }
+        .card-front {
+            background-color: #ffffff; /* Blanco limpio para el emoji */
+            border: 4px solid #f97316; /* Naranja llamativo */
+            transform: rotateY(180deg);
+        }
+        .card.matched .card-front {
+            border-color: #10b981; /* Verde al coincidir */
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
+        }
+
+        /* Estilo para el botón de reinicio y otros botones */
+        .restart-button {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .restart-button:hover {
+            background-color: #f97316;
+            transform: translateY(-1px);
+        }
+        .restart-button:active {
+            transform: translateY(1px);
+        }
+        /* Estilo específico para el botón de instrucciones para evitar conflicto de hover */
+        #rules-button:hover {
+            background-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-lg bg-white p-6 md:p-8 rounded-2xl shadow-2xl border-t-8 border-blue-500">
+        <!-- Título y Marcador -->
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                MatchMoji 🧠
+            </h1>
+            <p class="text-gray-500">Encuentra los pares de emojis. ¡Rápido!</p>
+            
+            <!-- CONTADORES Y BOTONES ACTUALIZADOS -->
+            <div class="flex flex-wrap justify-center items-center gap-3 mt-4">
+                <button id="rules-button" class="restart-button bg-blue-500 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl flex-grow sm:flex-grow-0">
+                    Instrucciones
+                </button>
+                
+                <!-- Contenedor para ambos contadores (Movimientos y Parejas) -->
+                <div class="flex flex-grow justify-center space-x-3 w-full sm:w-auto">
+                    <!-- Contador de Movimientos -->
+                    <div class="text-lg font-semibold text-gray-700 bg-yellow-100 p-2 rounded-lg shadow-sm text-center flex-1">
+                        Mov.: <span id="moves-counter" class="text-orange-600">0</span>
+                    </div>
+                    <!-- Contador de Parejas (Puntaje) - NUEVO -->
+                    <div class="text-lg font-semibold text-gray-700 bg-green-100 p-2 rounded-lg shadow-sm text-center flex-1">
+                        Par.: <span id="score-counter" class="text-green-600">0</span>
+                    </div>
+                </div>
+                
+                <button id="reset-button" class="restart-button bg-orange-500 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl flex-grow sm:flex-grow-0">
+                    Reiniciar
+                </button>
+            </div>
+        </header>
+
+        <!-- Contenedor del Tablero de Juego -->
+        <main class="grid grid-cols-4 gap-3 md:gap-4" id="game-board">
+            <!-- Las cartas se inyectarán aquí con JavaScript -->
+        </main>
+
+        <!-- Modal de Reglas (Inicialmente oculto) -->
+        <div id="rules-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <!-- Aquí agregamos max-h-[90vh] y overflow-y-auto -->
+            <div class="bg-white p-6 md:p-8 max-w-md w-full rounded-xl shadow-2xl border-4 border-blue-500 transform scale-100 transition-transform duration-300 max-h-[90vh] overflow-y-auto">
+                <!-- TÍTULO SIMPLIFICADO: Solo MatchMoji centrado y en grande -->
+                <h2 class="text-4xl font-bold text-gray-800 mb-6 text-center">
+                    MatchMoji
+                </h2>
+                <div class="text-gray-700 space-y-3">
+                    <!-- Palabras clave resaltadas con negritas y color naranja -->
+                    <p>Este es un clásico juego de <span class="font-bold text-orange-600">memoria</span> que te ayuda a ejercitar la concentración y la memoria visual.</p>
+
+                    <h3 class="text-xl font-semibold text-orange-600">Objetivo</h3>
+                    <p class="pl-4 border-l-4 border-orange-200">Encontrar todos los pares de emojis idénticos en el menor número de <span class="font-bold text-orange-600">Movimientos</span> posible.</p>
+
+                    <h3 class="text-xl font-semibold text-blue-600">Reglas</h3>
+                    <ul class="list-disc list-inside space-y-2 ml-4">
+                        <!-- Énfasis con colores por tipo de acción/resultado -->
+                        <li><strong class="text-blue-600">Voltear Cartas:</strong> En cada turno, haz clic en dos cartas para voltearlas y revelar su emoji.</li>
+                        <!-- Texto corregido: quitado el signo de exclamación -->
+                        <li><strong class="text-green-600">Si Hacen Pareja:</strong> Si los dos emojis son iguales, las cartas se quedan boca arriba (marcado en verde). ¡Tu puntaje de parejas sube!</li>
+                        <li><strong class="text-red-500">Si NO Hacen Pareja:</strong> Si los emojis son diferentes, las cartas se voltearán de nuevo automáticamente después de un momento.</li>
+                        <li><strong class="text-yellow-600">Contador:</strong> El contador de Movimientos aumenta al voltear la segunda carta.</li>
+                        <li><strong class="text-purple-600">Victoria:</strong> Ganas el juego cuando todas las cartas estén emparejadas. ¡Apunta a tu récord personal!</li>
+                    </ul>
+                </div>
+                <button id="close-rules-button" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition duration-150">
+                    ¡Entendido!
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal de Victoria (Inicialmente oculto) -->
+        <div id="win-message" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-8 rounded-xl text-center shadow-2xl border-4 border-green-500 transform scale-100 transition-transform duration-300">
+                <p class="text-5xl mb-4">🎉 ¡Ganaste! 🎉</p>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                    ¡Felicidades! Completaste MatchMoji.
+                </h2>
+                <p class="text-lg text-gray-600 mb-6">
+                    Lo lograste en <span id="final-moves" class="font-extrabold text-blue-600"></span> movimientos.
+                </p>
+                <button id="close-modal-button" class="restart-button bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700">
+                    Jugar de Nuevo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Definición de las variables globales necesarias
+        // Nota: Los imports de Firebase se incluirían aquí si el usuario decide implementar la persistencia de datos (Récords).
+        let db;
+        let auth;
+        let userId;
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // --- Variables del Juego ---
+        const emojis = ['🌟', '🍕', '🚀', '💡', '🌍', '🦋', '🤖', '🌈'];
+        let gameCards = [];
+        let moves = 0;
+        let matchedPairs = 0; // Este es el contador de puntaje (Parejas encontradas)
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+
+        // --- Referencias al DOM ---
+        const board = document.getElementById('game-board');
+        const movesCounter = document.getElementById('moves-counter');
+        const scoreCounter = document.getElementById('score-counter'); // Nuevo contador de puntaje
+        const resetButton = document.getElementById('reset-button');
+        const winMessage = document.getElementById('win-message');
+        const finalMovesSpan = document.getElementById('final-moves');
+        const closeModalButton = document.getElementById('close-modal-button');
+        const rulesButton = document.getElementById('rules-button');
+        const rulesModal = document.getElementById('rules-modal');
+        const closeRulesButton = document.getElementById('close-rules-button');
+
+
+        // Función de utilidad para mezclar el array (Algoritmo Fisher-Yates)
+        const shuffle = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        // 1. Inicializa y renderiza el tablero
+        const initializeGame = () => {
+            // Reiniciar variables de estado
+            moves = 0;
+            matchedPairs = 0;
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            
+            // Reiniciar contadores en la interfaz
+            movesCounter.textContent = moves;
+            scoreCounter.textContent = matchedPairs; // Resetear el nuevo contador de puntaje
+            
+            winMessage.classList.add('hidden');
+            rulesModal.classList.add('hidden'); 
+            board.innerHTML = ''; // Limpiar tablero anterior
+
+            // Crear las 16 cartas (8 pares)
+            let cardValues = [...emojis, ...emojis];
+            gameCards = shuffle(cardValues);
+
+            gameCards.forEach((emoji, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.dataset.emoji = emoji; // Guarda el valor para la comparación
+
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <!-- Cara oculta (Azul) -->
+                        <div class="card-face card-back text-2xl md:text-3xl font-bold">
+                            ?
+                        </div>
+                        <!-- Cara visible (Emoji) -->
+                        <div class="card-face card-front">
+                            ${emoji}
+                        </div>
+                    </div>
+                `;
+
+                cardElement.addEventListener('click', () => handleCardClick(cardElement));
+                board.appendChild(cardElement);
+            });
+        };
+
+        // 2. Manejador de clic de carta
+        const handleCardClick = (card) => {
+            // Si el tablero está bloqueado, ya tiene un par seleccionado, o la carta ya está volteada/emparejada, ignora el clic.
+            if (lockBoard || card === firstCard || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                return;
+            }
+
+            // Voltear la carta
+            card.classList.add('flipped');
+
+            if (!firstCard) {
+                // Primer clic
+                firstCard = card;
+                return;
+            }
+
+            // Segundo clic
+            secondCard = card;
+            moves++;
+            movesCounter.textContent = moves;
+
+            lockBoard = true; // Bloquear el tablero temporalmente
+
+            checkForMatch();
+        };
+
+        // 3. Comprobar si hay una coincidencia
+        const checkForMatch = () => {
+            const isMatch = firstCard.dataset.emoji === secondCard.dataset.emoji;
+
+            if (isMatch) {
+                disableCards(); // Es una pareja
+            } else {
+                unflipCards(); // No es una pareja, voltear de nuevo
+            }
+        };
+
+        // 4. Deshabilitar cartas (encontraron pareja)
+        const disableCards = () => {
+            // Marcar ambas cartas como 'matched'
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            // Quitar el event listener (ya no se pueden hacer clic)
+            firstCard.removeEventListener('click', () => handleCardClick(firstCard));
+            secondCard.removeEventListener('click', () => handleCardClick(secondCard));
+
+            // INCREMENTAR EL PUNTAJE DE PAREJAS
+            matchedPairs++;
+            scoreCounter.textContent = matchedPairs; // Actualizar el display
+            
+            resetBoard();
+
+            // Comprobar si el juego ha terminado (8 parejas = 8 emojis únicos)
+            if (matchedPairs === emojis.length) {
+                setTimeout(() => showWinMessage(), 500);
+            }
+        };
+
+        // 5. Voltear cartas (no hubo pareja)
+        const unflipCards = () => {
+            setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                resetBoard();
+            }, 1000); // Dar 1 segundo para ver el par
+        };
+
+        // 6. Resetear el estado del par seleccionado
+        const resetBoard = () => {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        };
+
+        // 7. Mostrar mensaje de victoria
+        const showWinMessage = () => {
+            finalMovesSpan.textContent = moves;
+            winMessage.classList.remove('hidden');
+        };
+
+        // Event Listeners
+        resetButton.addEventListener('click', initializeGame);
+        closeModalButton.addEventListener('click', initializeGame);
+        
+        // Event Listeners para el Modal de Reglas
+        rulesButton.addEventListener('click', () => {
+            rulesModal.classList.remove('hidden');
+        });
+
+        closeRulesButton.addEventListener('click', () => {
+            rulesModal.classList.add('hidden');
+        });
+
+        // Inicializar el juego al cargar la página
+        window.onload = initializeGame;
+
+    </script>
+</body>
+</html>
